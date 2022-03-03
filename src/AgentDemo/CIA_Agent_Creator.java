@@ -6,6 +6,8 @@ public class CIA_Agent_Creator {
 
     public Object create() {
         //TODO
-        return null;
+        CIA_Agent agent = new CIA_Agent(footPrints[index++]);
+        new Thread(agent).start();
+        return agent;
     }
 }
