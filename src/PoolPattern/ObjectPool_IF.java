@@ -1,5 +1,6 @@
 package PoolPattern;
 
+
 public interface ObjectPool_IF {
     public int getSize();
     public int getCapacity();
