@@ -5,7 +5,8 @@ public class FBI_Agent_Creator {
     private int index;
 
     public Object create() {
-        //TODO
-        return null;
+        FBI_Agent agent = new FBI_Agent(footPrints[index++]);
+        new Thread(agent).start();
+        return agent;
     }
 }

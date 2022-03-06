@@ -1,7 +1,10 @@
 package PoolPattern;
 // check this site: https://git-scm.com/book/en/v2/Git-Branching-Rebasing
+
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+
 /**
- * TODO: Implement object pool - this is going to be the largest amount of code.
  * Singleton ObjectPool, to ensure desirable behavior or consistent state.
  * Manages costly object creation in a single place.
  */
@@ -13,13 +16,14 @@ public class ObjectPool implements ObjectPool_IF{
 
 
     ObjectCreation_IF creator;
-    private Object lockObject = new Object(); // from textbook pg.171
-    private int size; // how many free objects
+    private Object lockObject = new Object(); // from textbook pg.171 limited pool - NOT FOR THIS LAB
+
     private int instanceCount; // how many objects have been created
     private int maxInstances; // maximum objects to be created
 
-    private Object[] pool; // privately accessed pool of objects stored in an array.
+    private ArrayList pool; // privately accessed pool of objects stored in an array.
 
+    private Class poolClass; //???
 
     public synchronized static ObjectPool getPoolInstance(ObjectCreation_IF c, int max){
         if (poolInstance==null) // ensures that threads have no collisions
@@ -40,7 +44,7 @@ public class ObjectPool implements ObjectPool_IF{
 //        creator = c; // how is this used??
         this.creator = c; // LIKE THIS - less goooooo
         maxInstances=max;
-        pool = new Object[maxInstances];
+        pool = new ArrayList();
     }
 
 
@@ -50,16 +54,18 @@ public class ObjectPool implements ObjectPool_IF{
      *
      */
     public int getSize() {
-        return size;
+
+        synchronized (pool){
+            return pool.size();
+        }
     }
 
-    // TODO:
     @Override
     /**
      * return the maximum number of objects that may be in the pool awaiting reuse.
      */
     public int getCapacity() {
-        return pool.length; // pool is stored in Object array - calling Array.length from java ADT.
+        return maxInstances; // pool is stored in Object array - calling Array.length from java ADT.
     }
 
     @Override
@@ -73,25 +79,108 @@ public class ObjectPool implements ObjectPool_IF{
     public void setCapacity(int newValue) throws IllegalArgumentException {
         if(newValue <= 0){
             throw new IllegalArgumentException("the value must be greater than zero " + newValue);
-        }// if
-        synchronized (lockObject){
+        }
+        else
+        maxInstances = newValue;
+        // if
+        /*synchronized (lockObject){
             Object[] newPool = new Object[newValue];
-            System.arraycopy(poolInstance,0, newPool,0,newValue); // look here
-        }// synchronized
+            System.arraycopy(poolInstance,0, newPool,0,newValue); // look here*/
+        //}// synchronized
     }
 
+    /**
+     * create object to be managed by this pool
+     */
+    public Object createObject(){
+        Object newObject = creator.create();
+        instanceCount++;
+        return newObject;
+    }
+    /**
+     *
+     * @return
+     */
     @Override
     public Object getObject() {
-        return null;
+        synchronized (pool) {
+            Object thisObject = removeObject();
+            if (thisObject != null) {
+                return thisObject;
+            }
+            if (getInstanceCount() < getCapacity()) {
+                return createObject();
+            }
+            else{
+                return null;
+            } // if
+        } // synchronized
+    }// getObject
+
+    public int getInstanceCount(){
+        return instanceCount;
     }
 
+    /**
+     * returns an object from the pool, if instance count is greater than max amount,
+     * then this method will wait until an object becomes available for reuse
+     *
+     * @return
+     */
     @Override
-    public Object waitForObject() {
-        return null;
+    public Object waitForObject() throws InterruptedException{
+        synchronized (pool) {
+            Object thisObject = removeObject();
+            if(thisObject!=null){
+                return thisObject;
+            }
+            if(getInstanceCount() < getCapacity()){ // getCapacity returns maxInstances
+                return createObject();
+            }
+            else{
+                do{
+                    pool.wait();
+                    thisObject = removeObject();
+                }while(thisObject==null);
+                return thisObject;
+            }
+        }
     }
 
+    /**
+     * release an object to the pool for reuse
+     *
+     * @param obj
+     */
     @Override
-    public void release(Object o) {
+    public void release(Object obj) {
+        if(obj == null){
+            throw new NullPointerException();
+        }
+        if(!poolClass.isInstance(obj)){ // check if that instance of obj matches
+            String actualClassName = obj.getClass().getName(); // way to call getter on an unknown class, class knows about itself.
+            throw new ArrayStoreException(actualClassName); // throws exception and shows user the name of class they passed
+        }
+        synchronized (pool){
+            pool.add(obj);
+            pool.notify(); // interesting
+        }
+    }
 
+    /**
+     * remove an object from the pool array and return it
+     *
+     * @return
+     */
+    private Object removeObject(){
+        while(pool.size() > 0){
+            SoftReference thisRef = (SoftReference) pool.remove(pool.size()-1);
+            Object thisObject = thisRef.get();
+            if(thisObject!=null){
+                return thisObject;
+            }
+            instanceCount--;
+        } // while
+        return null; // keep compiler happy
     }
 }

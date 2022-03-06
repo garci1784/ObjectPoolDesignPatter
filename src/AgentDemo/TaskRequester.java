@@ -13,8 +13,12 @@ public class TaskRequester {
     }
 
     public void run(){
-        //TODO
-        Agent_IF agent = (Agent_IF)server.waitForObject(); // what is going on with this line?
+        Agent_IF agent = null; // what is going on with this line?
+        try {
+            agent = (Agent_IF)server.waitForObject();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         agent.startTask();
         try {
             //
