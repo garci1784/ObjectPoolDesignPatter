@@ -1,5 +1,6 @@
 package PoolPattern;
 // check this site: https://git-scm.com/book/en/v2/Git-Branching-Rebasing
+/**** confused whether we use ArrayList or Array. Implement using softObjectPool, but UML shows array **/
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class ObjectPool implements ObjectPool_IF{
 
     ObjectCreation_IF creator;
     private Object lockObject = new Object(); // from textbook pg.171 limited pool - NOT FOR THIS LAB
-
+    private int size;
     private int instanceCount; // how many objects have been created
     private int maxInstances; // maximum objects to be created
 
@@ -40,9 +41,8 @@ public class ObjectPool implements ObjectPool_IF{
      */
     private ObjectPool(ObjectCreation_IF c, int max){
         instanceCount = 0;
-
-//        creator = c; // how is this used??
-        this.creator = c; // LIKE THIS - less goooooo
+//        poolClass = (Class) new Object();
+        this.creator = c;
         maxInstances=max;
         pool = new ArrayList();
     }
@@ -157,10 +157,10 @@ public class ObjectPool implements ObjectPool_IF{
         if(obj == null){
             throw new NullPointerException();
         }
-        if(!poolClass.isInstance(obj)){ // check if that instance of obj matches
-            String actualClassName = obj.getClass().getName(); // way to call getter on an unknown class, class knows about itself.
-            throw new ArrayStoreException(actualClassName); // throws exception and shows user the name of class they passed
-        }
+//        if(!poolClass.isInstance(obj)){ // check if that instance of obj matches
+//            String actualClassName = obj.getClass().getName(); // way to call getter on an unknown class, class knows about itself.
+//            throw new ArrayStoreException(actualClassName); // throws exception and shows user the name of class they passed
+//        }
         synchronized (pool){
             pool.add(obj);
             pool.notify(); // interesting
@@ -173,9 +173,15 @@ public class ObjectPool implements ObjectPool_IF{
      * @return
      */
     private Object removeObject(){
+        Object thisObject;
         while(pool.size() > 0){
-            SoftReference thisRef = (SoftReference) pool.remove(pool.size()-1);
-            Object thisObject = thisRef.get();
+            try {
+                SoftReference thisRef = (SoftReference) pool.remove(pool.size() - 1);
+                thisObject = thisRef.get();
+            }catch(ClassCastException c){
+//                thisObject = pool.remove(pool.size()-1);
+                thisObject = null;
+            }
             if(thisObject!=null){
                 return thisObject;
             }

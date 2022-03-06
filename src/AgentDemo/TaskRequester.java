@@ -4,7 +4,7 @@ import PoolPattern.ObjectPool;
 
 import static java.lang.Thread.sleep;
 
-public class TaskRequester {
+public class TaskRequester implements Runnable{
     private ObjectPool server;
 
     public TaskRequester(ObjectPool p) {
@@ -21,7 +21,6 @@ public class TaskRequester {
         }
         agent.startTask();
         try {
-            //
             sleep(2000); // simulate task processing
         } catch (InterruptedException e) {
             e.printStackTrace();

@@ -43,11 +43,13 @@ public class CIA_Agent implements Agent_IF, Runnable{
     @Override
     public void startTask() {
         workingInProgress = true;
+        processing();
     }
 
     @Override
     public void stopTask() {
         workingInProgress = false;
+        System.out.println("done");
     }
 
     @Override

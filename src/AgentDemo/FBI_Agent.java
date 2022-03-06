@@ -9,6 +9,7 @@ import static java.lang.Thread.sleep;
 public class FBI_Agent implements Runnable, Agent_IF{
     private Boolean workingInProgress;
     private String myFootPrint;
+
     private static int id; // static??
 
     public FBI_Agent(String myFootPrint) {
@@ -25,6 +26,7 @@ public class FBI_Agent implements Runnable, Agent_IF{
                     e.printStackTrace();
                 }
                 System.out.println(myFootPrint);
+                this.setTask(id++);
             }
             else{
                 try {
@@ -43,15 +45,18 @@ public class FBI_Agent implements Runnable, Agent_IF{
     @Override
     public void startTask() {
         workingInProgress = true;
+        processing();
     }
 
     @Override
     public void stopTask() {
         workingInProgress = false;
+        System.out.println("done");
     }
 
     @Override
     public void setTask(int id) {
         this.id = id;
     }
+
 }
